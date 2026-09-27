@@ -1,34 +1,28 @@
-# BuscaIA — Busca local em documentos
+# BuscaIA
 
-Aplicação desktop em Python para localizar informações em coleções de documentos armazenadas em uma pasta local ou sincronizada, como uma biblioteca do SharePoint sincronizada no computador.
+O BuscaIA nasceu de um problema bem simples: eu precisava encontrar informações espalhadas por muitos documentos sem abrir um por um.
 
-O projeto nasceu de um problema prático: encontrar rapidamente referências a uma pessoa ou CPF em muitos arquivos, sem precisar abrir cada documento manualmente.
+A ideia foi criar uma aplicação desktop em Python que percorresse uma pasta, inclusive suas subpastas, e procurasse por nome ou CPF dentro dos arquivos.
 
-> **Importante:** o BuscaIA não se conecta diretamente à API do SharePoint. A aplicação trabalha com arquivos acessíveis pelo sistema de arquivos local.
+No meu caso, essa pasta pode ser uma biblioteca do SharePoint sincronizada no computador. O programa não se conecta diretamente ao SharePoint nem usa Microsoft Graph. Para o BuscaIA, são arquivos locais como quaisquer outros.
 
-## O que o projeto faz
+## O que ele faz
 
-- Pesquisa por **nome ou CPF**, inclusive CPF com ou sem formatação.
-- Percorre a pasta escolhida e suas subpastas.
-- Lê arquivos **PDF, DOCX, TXT e CSV**.
-- Abre arquivos **ZIP** e pesquisa PDFs contidos neles.
-- Procura padrões de **CPF, RG e número de contrato**.
-- Mostra o arquivo, caminho relativo e um trecho de contexto do resultado.
-- Executa a busca em uma thread separada para manter a interface responsiva.
-- Exporta os resultados para **CSV** com codificação UTF-8 BOM e separador `;`.
+Hoje o programa consegue:
 
-## Tecnologias
+- pesquisar por nome ou CPF;
+- encontrar CPF mesmo quando a pontuação usada na busca é diferente da encontrada no documento;
+- ler PDF, DOCX, TXT e CSV;
+- procurar em PDFs que estejam dentro de arquivos ZIP;
+- identificar padrões de CPF, RG e número de contrato;
+- mostrar o arquivo, o caminho e um trecho onde a informação foi encontrada;
+- exportar os resultados para CSV.
 
-- Python
-- Tkinter / ttk
-- pdfplumber
-- python-docx
-- pandas
-- zipfile, tempfile, threading e expressões regulares da biblioteca padrão
+A interface foi feita com Tkinter. A busca roda em uma thread separada para não deixar a janela travada enquanto os documentos são processados.
 
 ## Como executar
 
-Requer Python 3.8 ou superior.
+O projeto requer Python 3.8 ou superior.
 
 ```bash
 git clone https://github.com/azenhasoft/buscaia.git
@@ -37,26 +31,38 @@ pip install -r requirements.txt
 python buscaia.py
 ```
 
-A interface permite selecionar uma pasta, informar um nome ou CPF e iniciar a pesquisa. Os resultados encontrados aparecem em uma tabela e podem ser exportados para CSV.
+Depois de abrir o programa, basta escolher a pasta, informar um nome ou CPF e iniciar a busca.
 
-## Formatos tratados
+## Tecnologias usadas
 
-| Formato | Comportamento atual |
+- Python
+- Tkinter / ttk
+- pdfplumber
+- python-docx
+- pandas
+- expressões regulares
+- zipfile e tempfile
+
+## Formatos
+
+| Formato | Como é tratado |
 | --- | --- |
-| PDF | Extração de texto com `pdfplumber` |
+| PDF | Texto extraído com `pdfplumber` |
 | DOCX | Leitura de parágrafos e tabelas |
 | TXT / CSV | Leitura de texto com tentativa de diferentes encodings |
-| ZIP | Pesquisa em PDFs armazenados dentro do arquivo compactado |
+| ZIP | Pesquisa nos PDFs armazenados dentro do arquivo |
 
-Arquivos `.doc` podem ser identificados pela aplicação, mas `python-docx` trabalha nativamente com DOCX; portanto, documentos no formato DOC antigo podem não ser processados corretamente.
+Existe uma verificação para arquivos `.doc` no código, mas a biblioteca `python-docx` trabalha com DOCX. Por isso, documentos antigos no formato DOC podem não funcionar corretamente.
 
 ## Como a busca funciona
 
-A aplicação percorre recursivamente os arquivos da pasta selecionada. Quando encontra um formato tratado, extrai seu conteúdo textual e procura o termo informado.
+O programa percorre os arquivos da pasta selecionada e extrai o texto dos formatos que consegue ler.
 
-Para CPF, a busca também compara sequências numéricas sem pontuação. Expressões regulares são usadas para localizar padrões de CPF, RG e contrato. A aplicação tenta associar um nome ao resultado por meio de padrões textuais e contexto próximo.
+Quando a busca é por CPF, retiro os caracteres que não são números antes da comparação. Assim, uma busca por CPF sem pontuação também pode encontrar a versão formatada no documento.
 
-Essas heurísticas são úteis para busca documental, mas **não constituem validação oficial de identidade ou dos números encontrados** e podem produzir associações incorretas em documentos complexos.
+Depois de encontrar o termo, o programa tenta localizar CPF, RG, contrato e nome usando expressões regulares e o texto próximo ao resultado.
+
+Essa parte ainda é baseada em regras e heurísticas. Ela ajuda a localizar informações, mas não valida se um CPF, RG ou nome realmente pertence àquela pessoa. Em documentos mais complicados, a associação pode sair errada.
 
 ## Estrutura atual
 
@@ -67,35 +73,43 @@ buscaia/
 └── README.md
 ```
 
-O projeto ainda está concentrado em um único módulo Python. Uma futura refatoração poderá separar interface, extração de documentos e regras de busca.
+Por enquanto, praticamente toda a aplicação está em `buscaia.py`.
+
+Funciona, mas não é a estrutura que quero manter conforme o projeto crescer. Um dos próximos passos é separar a interface, a leitura dos documentos e as regras de busca.
+
+## O que ainda falta
+
+Há algumas limitações que quero resolver aos poucos:
+
+- PDFs que são apenas imagens não passam por OCR;
+- ZIPs com senha não são suportados;
+- dentro dos ZIPs, a busca atual procura apenas PDFs;
+- a extração dos dados ainda depende de expressões regulares e heurísticas;
+- ainda não escrevi testes automatizados;
+- não existe integração direta com SharePoint ou Microsoft Graph.
+
+Também quero criar arquivos fictícios para demonstração e colocar uma imagem ou GIF da aplicação funcionando. Assim posso mostrar o projeto sem usar documentos ou dados reais.
 
 ## Privacidade
 
-O BuscaIA pode ser usado para pesquisar dados pessoais presentes em documentos. Use somente arquivos aos quais você tenha autorização de acesso e trate os resultados de acordo com as políticas de segurança e privacidade aplicáveis ao seu ambiente.
+Este programa pode ser usado em documentos que contenham dados pessoais.
 
-O repositório não inclui documentos reais de funcionários nem dados pessoais para demonstração.
-
-## Limitações conhecidas
-
-- Não possui integração direta com SharePoint ou Microsoft Graph.
-- Não executa OCR em PDFs compostos apenas por imagens.
-- ZIPs protegidos por senha não são suportados.
-- Dentro de ZIPs, a busca atual é voltada a arquivos PDF.
-- A extração de nome, CPF, RG e contrato é baseada em heurísticas e expressões regulares.
-- Não há suíte automatizada de testes no estado atual do projeto.
+Não coloquei documentos reais de funcionários no repositório e não pretendo fazer isso. Quem usar o BuscaIA deve trabalhar apenas com arquivos aos quais tenha autorização de acesso e seguir as regras de segurança e privacidade do próprio ambiente.
 
 ## Próximos passos
 
-- [ ] Separar interface, extração e regras de busca em módulos.
-- [ ] Criar testes automatizados para normalização, busca e extração.
-- [ ] Adicionar dados sintéticos de demonstração.
-- [ ] Adicionar screenshot ou GIF da aplicação usando apenas dados fictícios.
-- [ ] Avaliar suporte a OCR para documentos digitalizados.
-- [ ] Melhorar a associação de dados ao trecho em que o termo foi encontrado.
-- [ ] Avaliar busca em lote.
+- [ ] Separar o código em módulos
+- [ ] Criar testes automatizados
+- [ ] Preparar documentos fictícios para demonstração
+- [ ] Adicionar screenshot ou GIF da aplicação
+- [ ] Experimentar OCR em documentos digitalizados
+- [ ] Melhorar a associação entre os dados encontrados
+- [ ] Testar uma busca em lote
 
-## Por que mantenho este projeto
+## Por que este projeto está aqui
 
-Este repositório faz parte do meu processo de desenvolvimento em Python e automação. Ele representa uma aplicação funcional construída em torno de um problema documental concreto, mas também registra decisões e limitações que ainda pretendo melhorar.
+O BuscaIA não começou como exercício de curso. Ele nasceu de um problema que eu queria resolver.
 
-Contribuições e sugestões são bem-vindas.
+Ainda tem coisas que eu faria diferente e outras que nem implementei. É justamente por isso que quero continuar trabalhando nele.
+
+Para mim, este repositório serve tanto para mostrar o que já consegui construir quanto para registrar o que ainda estou aprendendo.
