@@ -1,143 +1,101 @@
-# Sistema de Busca em Documentos SharePoint
+# BuscaIA — Busca local em documentos
 
-Sistema inteligente para buscar dados de funcionários em documentos do SharePoint, incluindo PDFs, ZIPs, DOCX e arquivos de texto.
+Aplicação desktop em Python para localizar informações em coleções de documentos armazenadas em uma pasta local ou sincronizada, como uma biblioteca do SharePoint sincronizada no computador.
 
-## 🚀 Funcionalidades
+O projeto nasceu de um problema prático: encontrar rapidamente referências a uma pessoa ou CPF em muitos arquivos, sem precisar abrir cada documento manualmente.
 
-- **Busca Inteligente**: Encontra dados por nome ou CPF (com ou sem formatação)
-- **Suporte a Múltiplos Formatos**: PDF, ZIP, DOCX, TXT, CSV
-- **Extração Automática**: Identifica automaticamente:
-  - Nome do funcionário
-  - CPF
-  - RG  
-  - Número do contrato (formato nnnnn/aaaa)
-- **Busca Recursiva**: Varre todas as subpastas automaticamente
-- **Interface Amigável**: Interface gráfica intuitiva com TKinter
-- **Exportação**: Gera relatórios em CSV para análise
+> **Importante:** o BuscaIA não se conecta diretamente à API do SharePoint. A aplicação trabalha com arquivos acessíveis pelo sistema de arquivos local.
 
-## 📋 Pré-requisitos
+## O que o projeto faz
 
-Antes de executar, instale as dependências:
+- Pesquisa por **nome ou CPF**, inclusive CPF com ou sem formatação.
+- Percorre a pasta escolhida e suas subpastas.
+- Lê arquivos **PDF, DOCX, TXT e CSV**.
+- Abre arquivos **ZIP** e pesquisa PDFs contidos neles.
+- Procura padrões de **CPF, RG e número de contrato**.
+- Mostra o arquivo, caminho relativo e um trecho de contexto do resultado.
+- Executa a busca em uma thread separada para manter a interface responsiva.
+- Exporta os resultados para **CSV** com codificação UTF-8 BOM e separador `;`.
+
+## Tecnologias
+
+- Python
+- Tkinter / ttk
+- pdfplumber
+- python-docx
+- pandas
+- zipfile, tempfile, threading e expressões regulares da biblioteca padrão
+
+## Como executar
+
+Requer Python 3.8 ou superior.
 
 ```bash
-pip install PyPDF2 pdfplumber python-docx pandas
+git clone https://github.com/azenhasoft/buscaia.git
+cd buscaia
+pip install -r requirements.txt
+python buscaia.py
 ```
 
-## 🎯 Como Usar
+A interface permite selecionar uma pasta, informar um nome ou CPF e iniciar a pesquisa. Os resultados encontrados aparecem em uma tabela e podem ser exportados para CSV.
 
-### 1. Executar o Sistema
-```bash
-python busca_documentos.py
+## Formatos tratados
+
+| Formato | Comportamento atual |
+| --- | --- |
+| PDF | Extração de texto com `pdfplumber` |
+| DOCX | Leitura de parágrafos e tabelas |
+| TXT / CSV | Leitura de texto com tentativa de diferentes encodings |
+| ZIP | Pesquisa em PDFs armazenados dentro do arquivo compactado |
+
+Arquivos `.doc` podem ser identificados pela aplicação, mas `python-docx` trabalha nativamente com DOCX; portanto, documentos no formato DOC antigo podem não ser processados corretamente.
+
+## Como a busca funciona
+
+A aplicação percorre recursivamente os arquivos da pasta selecionada. Quando encontra um formato tratado, extrai seu conteúdo textual e procura o termo informado.
+
+Para CPF, a busca também compara sequências numéricas sem pontuação. Expressões regulares são usadas para localizar padrões de CPF, RG e contrato. A aplicação tenta associar um nome ao resultado por meio de padrões textuais e contexto próximo.
+
+Essas heurísticas são úteis para busca documental, mas **não constituem validação oficial de identidade ou dos números encontrados** e podem produzir associações incorretas em documentos complexos.
+
+## Estrutura atual
+
+```text
+buscaia/
+├── buscaia.py
+├── requirements.txt
+└── README.md
 ```
 
-### 2. Configurar a Busca
-1. **Selecionar Pasta**: Clique em "Selecionar" e escolha a pasta raiz do SharePoint
-2. **Digitar Termo**: Informe o nome ou CPF do funcionário
-3. **Iniciar Busca**: Clique em "Buscar"
+O projeto ainda está concentrado em um único módulo Python. Uma futura refatoração poderá separar interface, extração de documentos e regras de busca.
 
-### 3. Analisar Resultados
-O sistema mostrará:
-- ✅ Nome do funcionário encontrado
-- ✅ CPF, RG e número do contrato
-- 📁 Arquivo e caminho onde os dados foram encontrados
-- 🔍 Trecho do texto onde a informação foi localizada
+## Privacidade
 
-### 4. Exportar Resultados
-Clique em "Exportar CSV" para gerar um relatório completo com todos os dados encontrados.
+O BuscaIA pode ser usado para pesquisar dados pessoais presentes em documentos. Use somente arquivos aos quais você tenha autorização de acesso e trate os resultados de acordo com as políticas de segurança e privacidade aplicáveis ao seu ambiente.
 
-## 🏗️ Estrutura do Código
+O repositório não inclui documentos reais de funcionários nem dados pessoais para demonstração.
 
-```
-sistema-busca-documentos/
-│
-├── busca_documentos.py      # Código principal
-├── README.md               # Este arquivo
-└── requirements.txt        # Dependências do projeto
-```
+## Limitações conhecidas
 
-## 🔧 Tecnologias Utilizadas
+- Não possui integração direta com SharePoint ou Microsoft Graph.
+- Não executa OCR em PDFs compostos apenas por imagens.
+- ZIPs protegidos por senha não são suportados.
+- Dentro de ZIPs, a busca atual é voltada a arquivos PDF.
+- A extração de nome, CPF, RG e contrato é baseada em heurísticas e expressões regulares.
+- Não há suíte automatizada de testes no estado atual do projeto.
 
-- **Python 3.8+**: Linguagem principal
-- **TKinter**: Interface gráfica
-- **PyPDF2 & pdfplumber**: Leitura de PDFs
-- **python-docx**: Leitura de documentos Word
-- **pandas**: Exportação de dados para CSV
+## Próximos passos
 
-## 📊 Formatos Suportados
+- [ ] Separar interface, extração e regras de busca em módulos.
+- [ ] Criar testes automatizados para normalização, busca e extração.
+- [ ] Adicionar dados sintéticos de demonstração.
+- [ ] Adicionar screenshot ou GIF da aplicação usando apenas dados fictícios.
+- [ ] Avaliar suporte a OCR para documentos digitalizados.
+- [ ] Melhorar a associação de dados ao trecho em que o termo foi encontrado.
+- [ ] Avaliar busca em lote.
 
-| Formato | Funcionalidade |
-|---------|----------------|
-| PDF | Extração completa de texto |
-| ZIP | Busca dentro de arquivos compactados |
-| DOCX | Leitura de documentos Word |
-| TXT/CSV | Leitura de arquivos de texto |
+## Por que mantenho este projeto
 
-## 🎨 Exemplo de Busca
+Este repositório faz parte do meu processo de desenvolvimento em Python e automação. Ele representa uma aplicação funcional construída em torno de um problema documental concreto, mas também registra decisões e limitações que ainda pretendo melhorar.
 
-### Busca por Nome:
-```
-Termo: "Maria Silva"
-Resultado: Encontra todos os documentos que mencionam "Maria Silva"
-```
-
-### Busca por CPF:
-```
-Termo: "123.456.789-00" ou "12345678900"
-Resultado: Encontra o CPF independente da formatação
-```
-
-## 📝 Padrões Reconhecidos
-
-- **CPF**: `123.456.789-00` ou `12345678900`
-- **RG**: `12.345.678-9` ou `123456789`
-- **Contrato**: `12345/2023` (5 dígitos/4 dígitos)
-- **Nomes**: Reconhece nomes completos e evita nomes de empresas
-
-## ⚡ Performance
-
-O sistema foi otimizado para:
-- ✅ Processamento em segundo plano (não trava a interface)
-- ✅ Leitura eficiente de grandes volumes de documentos
-- ✅ Busca inteligente que evita falsos positivos
-- ✅ Suporte a arquivos corrompidos (continua a busca)
-
-## 🐛 Solução de Problemas
-
-### Problema: Exportação CSV com colunas juntas
-**Solução**: O código já inclui correção para exportação correta com delimitador `;`
-
-### Problema: Encoding de caracteres especiais
-**Solução**: Sistema usa UTF-8 com BOM para compatibilidade com Excel
-
-### Problema: Arquivos ZIP com senha
-**Solução**: No momento, o sistema não suporta arquivos ZIP protegidos por senha
-
-## 📈 Próximas Melhorias
-
-- [ ] Suporte a arquivos ZIP com senha
-- [ ] Busca em imagens (OCR)
-- [ ] Interface web adicional
-- [ ] Relatórios em PDF
-- [ ] Busca em lote (múltiplos funcionários)
-
-## 👥 Contribuição
-
-Contribuições são bem-vindas! Sinta-se à vontade para:
-1. Fazer fork do projeto
-2. Criar uma branch para sua feature
-3. Commitar suas mudanças
-4. Abrir um Pull Request
-
-## 📄 Licença
-
-Este projeto está sob licença MIT. Veja o arquivo LICENSE para detalhes.
-
-## 🆘 Suporte
-
-Se encontrar problemas ou tiver sugestões:
-1. Verifique se todas as dependências estão instaladas
-2. Confirme que a pasta do SharePoint está acessível
-3. Teste com arquivos de exemplo antes de usar em produção
----
-
-**⭐ Se este projeto foi útil, deixe uma estrela no GitHub!**
+Contribuições e sugestões são bem-vindas.
